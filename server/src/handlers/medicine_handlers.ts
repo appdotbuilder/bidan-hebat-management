@@ -6,6 +6,9 @@ import {
   type LowStockMedicine,
   type ExpiredMedicine
 } from '../schema';
+import { db } from '../db';
+import { medicinesTable } from '../db/schema';
+import { asc } from 'drizzle-orm';
 
 export const createMedicine = async (input: CreateMedicineInput): Promise<Medicine> => {
   // This is a placeholder declaration! Real code should be implemented here.
@@ -28,10 +31,22 @@ export const createMedicine = async (input: CreateMedicineInput): Promise<Medici
 };
 
 export const getMedicines = async (): Promise<Medicine[]> => {
-  // This is a placeholder declaration! Real code should be implemented here.
-  // The goal of this handler is fetching all medicines from the database.
-  // Should return list of all medicines ordered by name.
-  return Promise.resolve([]);
+  try {
+    const results = await db.select()
+      .from(medicinesTable)
+      .orderBy(asc(medicinesTable.name))
+      .execute();
+
+    // Convert numeric and date fields to proper types
+    return results.map(medicine => ({
+      ...medicine,
+      price: parseFloat(medicine.price),
+      expiry_date: medicine.expiry_date ? new Date(medicine.expiry_date) : null
+    }));
+  } catch (error) {
+    console.error('Failed to fetch medicines:', error);
+    throw error;
+  }
 };
 
 export const getMedicineById = async (id: number): Promise<Medicine | null> => {
